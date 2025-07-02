@@ -1,11 +1,12 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
-import { useRef, useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { a, useSpring } from '@react-spring/web';
 import Candle from './components/Candle';
+import Animation from './components/Animation';
 import confetti from 'canvas-confetti';
 import './App.css';
-import Animation from './components/Animation';
+import LoadingScreen from './components/LoadingScreen';
 
 function CountdownOverlay({ onComplete }) {
   const [count, setCount] = useState(5);
@@ -22,7 +23,7 @@ function CountdownOverlay({ onComplete }) {
         setTimeout(() => {
           setCount(0);
           onComplete?.();
-        }, 800); // fade duration
+        }, 800);
       }, 700);
     }
 
@@ -39,22 +40,11 @@ function CountdownOverlay({ onComplete }) {
 }
 
 function App() {
+  const [started, setStarted] = useState(false);
   const [shake, setShake] = useState(false);
-  const [showCountdown, setShowCountdown] = useState(true);
+  const [showCountdown, setShowCountdown] = useState(false);
   const [showBirthdayText, setShowBirthdayText] = useState(false);
-  const audioRef = useRef(null); // 🎵 Add audio ref
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      launchConfetti();
-      setShake(true);
-      if (audioRef.current) {
-        audioRef.current.play().catch((err) => console.log("Autoplay error:", err));
-      }
-      setTimeout(() => setShake(false), 600);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
+  const audioRef = useRef(null);
 
   const { x } = useSpring({
     from: { x: 0 },
@@ -63,39 +53,88 @@ function App() {
     loop: shake ? { reverse: true } : false,
   });
 
+  const startExperience = () => {
+    setStarted(true);
+    setShowCountdown(true);
+
+    // Begin animations after countdown
+    setTimeout(() => {
+      launchConfetti();
+      setShake(true);
+      if (audioRef.current) {
+        audioRef.current.play().catch((err) =>
+          console.log('Autoplay error:', err)
+        );
+      }
+      setTimeout(() => setShake(false), 600);
+    }, 5000);
+  };
+
   return (
-    <a.div className="App" style={{ transform: x.to((x) => `translateX(${x}px)`) }}>
-      <audio ref={audioRef} src="/birthday-song.mp3" preload="auto" />
-      {showCountdown && (
-        <CountdownOverlay onComplete={() => {
-          setShowCountdown(false);
-          setShowBirthdayText(true);
-        }} />
+    <div className="background-wrapper">
+      {!started && <LoadingScreen onStart={startExperience} />}
+
+      {started && (
+        <a.div
+          className="card-container"
+          style={{ transform: x.to((x) => `translateX(${x}px)`) }}
+        >
+          <audio ref={audioRef} src="/birthday-song.mp3" preload="auto" />
+
+          {showCountdown && (
+            <CountdownOverlay
+              onComplete={() => {
+                setShowCountdown(false);
+                setShowBirthdayText(true);
+              }}
+            />
+          )}
+
+          {showBirthdayText && (
+            <div className="birthday-text">HAPPY BIRTHDAY!</div>
+          )}
+
+          <Canvas camera={{ position: [8, 4, 7], fov: 50 }}>
+            <ambientLight intensity={1.5} />
+            <hemisphereLight
+              skyColor="#ffffff"
+              groundColor="#444444"
+              intensity={0.6}
+            />
+            <directionalLight
+              position={[3, 5, 2]}
+              intensity={0.8}
+              castShadow
+            />
+
+            <group position={[0, -1.5, 0]}>
+              <Animation
+                scale={2.5}
+                position={[0, -1.5, 0]}
+                rotation={[0, 0.9, 0]}
+              />
+              <Candle position={[0, -1.2, 0]} />
+            </group>
+
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              maxPolarAngle={1.2}
+              minPolarAngle={1.2}
+            />
+            <Environment
+              files="/hdr/hansaplatz_1k.hdr"
+              background={false}
+            />
+          </Canvas>
+        </a.div>
       )}
-
-      {showBirthdayText && (
-        <div className="birthday-text">HAPPY BIRTHDAY!</div>
-      )}
-
-      <Canvas camera={{ position: [8, 4, 7], fov: 50 }}>
-        <ambientLight intensity={1.5} />
-        <hemisphereLight skyColor="#ffffff" groundColor="#444444" intensity={0.6} />
-        <directionalLight position={[3, 5, 2]} intensity={0.8} castShadow />
-
-        <group position={[0, -1.5, 0]}>
-          <Animation scale={2.5} position={[0, -1.5, 0]} rotation={[0, 0.9, 0]} />
-          <Candle position={[0, -1.2, 0]} />
-        </group>
-
-        <OrbitControls />
-        <Environment files="/hdr/hansaplatz_1k.hdr" background={false} />
-      </Canvas>
-    </a.div>
+    </div>
   );
 }
 
 function launchConfetti() {
-  const duration = 5000;
+  const duration = 8000;
   const animationEnd = Date.now() + duration;
   const defaults = {
     startVelocity: 40,
