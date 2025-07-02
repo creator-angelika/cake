@@ -59,7 +59,7 @@ function App() {
       launchConfetti();
       setShake(true);
       if (audioRef.current) {
-        audioRef.current.volume = 0.05; // 👈 Lower volume to 10%
+        audioRef.current.volume = 0.1; // 👈 Lower volume to 10%
         audioRef.current.play().catch((err) =>
           console.log('Autoplay error:', err)
         );
