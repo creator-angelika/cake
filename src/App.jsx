@@ -14,7 +14,6 @@ function CountdownOverlay({ onComplete }) {
 
   useEffect(() => {
     let timer;
-
     if (count > 1) {
       timer = setTimeout(() => setCount((prev) => prev - 1), 1000);
     } else if (count === 1) {
@@ -26,7 +25,6 @@ function CountdownOverlay({ onComplete }) {
         }, 800);
       }, 700);
     }
-
     return () => clearTimeout(timer);
   }, [count, onComplete]);
 
@@ -57,11 +55,11 @@ function App() {
     setStarted(true);
     setShowCountdown(true);
 
-    // Begin animations after countdown
     setTimeout(() => {
       launchConfetti();
       setShake(true);
       if (audioRef.current) {
+        audioRef.current.volume = 0.05; // 👈 Lower volume to 10%
         audioRef.current.play().catch((err) =>
           console.log('Autoplay error:', err)
         );
@@ -146,7 +144,6 @@ function launchConfetti() {
 
   const interval = setInterval(() => {
     const timeLeft = animationEnd - Date.now();
-
     if (timeLeft <= 0) {
       clearInterval(interval);
       return;
